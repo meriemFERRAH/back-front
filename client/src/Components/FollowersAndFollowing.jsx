@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from 'react-query';
 
 const Userlists = ({userInfo ,  userList }) => {
   console.log("useList : " + userList)
-  const [following, setFollowing] = useState(userList);
   const queryClient = useQueryClient();
   
   // Function to retrieve token from localStorage
@@ -27,10 +25,11 @@ const Userlists = ({userInfo ,  userList }) => {
       Authorization: `Bearer ${getToken()}`,
     },
   }));
-
+  const isUser =(id) =>{
+      return (id != localStorage.getItem('userId'))
+  }
   const isUserFollowed = (userId) => {
-    // Check if the displayed user is followed by the current user
-    return userInfo && userInfo.follows.includes(userId);
+    return userList.find(user => user._id === userId);
   };
 
   const onToggleFollow = async (id, isFollowed) => {
@@ -48,7 +47,7 @@ const Userlists = ({userInfo ,  userList }) => {
 
   return (
     <div className='flex flex-col items-center'>
-      {following.map((user) => (
+      {userList.map((user) => (
         <div key={user._id} className='flex items-center justify-between bg-white mb-1 p-4 w-full'>
           <div className='flex items-center'>
             <img src={user.image} alt='' className='h-[60px] w-[60px]' />
@@ -56,12 +55,12 @@ const Userlists = ({userInfo ,  userList }) => {
               {user?.username}
             </Link>
           </div>
-          <p
+          { isUser(user._id) && <p
             onClick={() => onToggleFollow(user._id, isUserFollowed(user._id))}
             className={`cursor-pointer ${isUserFollowed(user._id) ? 'text-red-500' : 'text-blue-500'}`}
           >
-            {isUserFollowed(user._id) ? 'Unfollow' : 'Follow back'}
-          </p>
+         {isUserFollowed(user._id) ? 'Unfollow' : 'Follow back'}
+          </p> }
         </div>
       ))}
     </div>

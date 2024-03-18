@@ -9,7 +9,7 @@ import Userlists from '../Components/FollowersAndFollowing';
 export default function Profile() {
     const { id } = useParams();
     const { data: userInfo, isLoading: userLoading, isError: userError } = useQuery(['userData', id], fetchUserData);
-
+    console.log(userInfo)
     const [showLiked, setShowLiked] = useState(false);
     const [showEvents, setShowEvents] = useState(true);
     const [showFollowers, setShowFollowers] = useState(false);
@@ -98,7 +98,7 @@ export default function Profile() {
                             <a href="" className={` ${showFollowing ? 'pt-[17px] pb-3 border-b-4 border-[#0047ff]' : ''}`} onClick={handleFollowingClick}>Following</a>
                         </div>
                         {showLiked && <LikedEvents data={userInfo?.likedEvents} />}
-                        {showEvents && <Events isUser={true} data = {userInfo?.YourEvents} />}
+                        {showEvents && <Events isUser={true} data = {userInfo} />}
                         {showFollowers && <Userlists userInfo = {userInfo} userList={userInfo?.followers} />}
                         {showFollowing && <Userlists userInfo = {userInfo} userList={userInfo?.follows} />}
                     </section>

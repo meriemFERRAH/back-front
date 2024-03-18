@@ -3,24 +3,25 @@ import Navbar from '../Components/CustomNavbar';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 
-const createPostMutation = async (postData) => { 
-  const token = localStorage.getItem('token'); 
- 
-  const response = await fetch('http://localhost:8000/addPost', { 
-    method: 'POST', 
-    headers: { 
-      'Content-Type': 'application/json', 
-      Authorization: `Bearer ${token}`, 
-    }, 
-    body: JSON.stringify(postData), 
-  }); 
- 
-  if (!response.ok) { 
-    throw new Error('Failed to create post'); 
-  } 
- 
-  return response.json(); 
+const createPostMutation = async ({ title, place, location, date, link,image, description, category }) => {
+  const token = localStorage.getItem('token');
+
+  const response = await fetch('http://localhost:8000/addPost', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ title, place, location, date, link,image, description, category }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create post');
+  }
+
+  return response.json();
 };
+
 
 
 
@@ -29,8 +30,6 @@ const CreateEvent = () => {
   const mutation = useMutation(createPostMutation, { 
     onSuccess: (data) => { 
       console.log('Post created successfully:', data); 
-      queryClient.invalidateQueries(['otherQueryKey']); 
-      // Redirect or perform any other actions upon successful creation 
     }, 
   });
   const Navigate = useNavigate();
@@ -111,7 +110,7 @@ const CreateEvent = () => {
     setIsTimeInputVisible(false);
   };
 
-   console.log({title , place , location , date , link , image , description , category });
+   console.log({ title, place, location, date, link,image, description, category });
   const handleImageRemove = (e, index) => {
     e.preventDefault();
     const newImages = image.filter((_, i) => i !== index);
@@ -128,15 +127,14 @@ const CreateEvent = () => {
         return;
       }
     }
-    const formData = { title, place, location, date, link, description, category };
-    mutation.mutate(formData);
+    mutation.mutate({ title, place, location, date, link, image , description, category });
   };
   
   return (
     <div className='bg-[#E1E1E1] h-screen w-full wrapper' >
       <Navbar />
       <main className='px-10 py-4 mx-32 my-4 bg-white rounded-lg min-h-rest'>
-        <h1 className='flex justify-center text-3xl text-blue-950 font-semibold'>Edit Your Event</h1>
+        <h1 className='flex justify-center text-3xl text-blue-950 font-semibold'>Create New Event</h1>
         <form className='flex flex-col mt-4 space-y-3' onSubmit={handleSubmit}>
           <input 
           type="text" 

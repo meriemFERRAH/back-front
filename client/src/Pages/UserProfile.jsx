@@ -149,7 +149,7 @@ export default function UserProfile() {
                             <a href="" className={` ${showFollowing ? 'pt-[17px] pb-3 border-b-4 border-[#0047ff]' : ''}`} onClick={handleFollowingClick}>Following</a>
                         </div>
                         {showLiked && <LikedEvents data={userInfo?.likedEvents} />}
-                        {showEvents && <Events isUser={false} data = {userInfo?.YourEvents} />}
+                        {showEvents && <Events isUser={false} data = {userInfo} />}
                         {showFollowers && <Userlists  userInfo={userInfo} userList={userInfo?.followers} />}
                         {showFollowing && <Userlists userInfo={owner}  userList={userInfo?.follows} />}
                     </section>

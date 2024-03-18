@@ -35,6 +35,39 @@ const EventPage = () => {
   const toggleReportPopup = () => {
     setShowReportPopup(!showReportPopup);
   };
+  const sendFeedback = async (message) => {
+    try {
+        const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
+        const response = await fetch(`http://localhost:8000/AddFeedBack/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            },
+            body: JSON.stringify({ message }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to submit feedback');
+        }
+        console.log('Feedback submitted successfully');
+        window.location.reload();
+        // Optionally, you can update the UI after feedback submission
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+    }
+};
+
+const handleFeedbackSubmit = (e) => {
+    e.preventDefault();
+    const message = e.target.value;
+    sendFeedback(message);
+};
+
+const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+        handleFeedbackSubmit(e);
+    }
+};
     return (
         <>
     {event  && (<span className={`h-screen ${showReportPopup ? 'brightness-50' : ''}`}>
@@ -88,12 +121,10 @@ const EventPage = () => {
                     Comments                    
                 </div>
             <div className='mb-10 Container'>
-                <div className='bg-white border-[#BDBDBD] border-b-2 w-[1200px] rounded-b-lg'>
-                <textarea
-                    placeholder="Type your comment..."
-                    className='  border-2 border-[#E9E9E9] p-5 w-full rounded-lg '
-                >
-                </textarea>
+                <div className='bg-white border-[#BDBDBD] border-2 w-[1200px] rounded-b-lg'>
+                <form  onSubmit={handleFeedbackSubmit}>
+                            <textarea name='feedback' className='ps-8 pt-4 pe-8 pb-4 w-[1200px] h-[60px]' placeholder='Type your feedback...' onKeyPress={handleKeyPress} />
+                </form>
                     {event.feedbacks.map((comment) => (
                         <div className=' border-2 border-[#E9E9E9] p-5' key={comment.id}>
                             <div className='flex flex-row justify-between'>
@@ -106,7 +137,7 @@ const EventPage = () => {
                                 </span>
                             </div>
                             <div className='px-10 py-3'>
-                                <p>{comment.content}</p>
+                                <p>{comment.message}</p>
                             </div>
                         </div>
                     ))}

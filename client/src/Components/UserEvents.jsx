@@ -1,5 +1,5 @@
 import AddBtn from '../Assets/images/add.svg'; 
-import { useQuery } from 'react-query';
+import { useQuery , useMutation } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import image from '../Assets/images/hero.png'
@@ -16,17 +16,36 @@ const CreateNewEvent = () => {
     </div>
   );
 };
-
-const ShowingEventCard = ({ data }) => {
+const deleteEvent = async (eventId, token) => {
+    const response = await fetch(`http://localhost:8000/deletEvent/${eventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete event');
+    }
+  };
+  
+  const ShowingEventCard = ({ data, token , isUser }) => {
     const navigate = useNavigate();
-
+  
     const handleCardClick = (id) => {
-        navigate(`/EventPage/${id}`);
+      navigate(`/EventPage/${id}`);
     };
-
+  
+    // Mutation function for deleting an event
+    const deleteEventMutation = useMutation((eventId) => deleteEvent(eventId, token));
+  
+    const handleDelete = (id) => {
+      deleteEventMutation.mutate(id);
+    };
+    const userEvent = data?.YourEvents;
     return (
         <>
-            {data?.map((card) => (
+            {userEvent?.map((card) => (
                 <div className='flex flex-col items-center ' key={card._id}>
                     <div className="cards1" onClick={() => handleCardClick(card._id)} >
                     <img className='w-[300px] h-[250px}' src={image} alt="image" />
@@ -39,9 +58,9 @@ const ShowingEventCard = ({ data }) => {
                 </div>
                     <div className="basis-3/6 ps-1">
                         <h3 className="text-md font-medium text-center">{card.title}</h3>
-                        <h4 >{card.organizer.username}</h4>
+                        <h4 >{data?.username}</h4>
                     </div>
-                    <div className="basis-2/6"> <span className="font-medium ps-4">{card.organizer?.followers.length} </span>Followers</div>
+                    <div className="basis-2/6"> <span className="font-medium ps-4">{data?.followers?.length} </span>Followers</div>
                 </div>
                 <div className="absolute top-2 right-2 bg-white hover:scale-[1.1] transition duration-500 p-1 rounded-3xl z-10">
                     <svg  xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 14" fill="none">
@@ -49,32 +68,34 @@ const ShowingEventCard = ({ data }) => {
                     </svg>
                 </div>
                     </div>
-                    <button className='bg-red-600 rounded-xl font-semibold text-white pt-2 pb-2 pe-4 ps-4 mt-4 hover:scale-[1.01]'>Delete This Event</button>
+                    {isUser && <button className='bg-red-600 rounded-xl font-semibold text-white pt-2 pb-2 pe-4 ps-4 mt-4 hover:scale-[1.01]' onClick={() => handleDelete(card._id)}>Delete This Event</button>}
                 </div>
             ))}
         </>
     );
 };
 
-const UserEvents = ({ isUser , data}) => {
-
+const UserEvents = ({ isUser, data }) => {
+    // Token management logic
+    const token = localStorage.getItem('token') // Replace 'your_token' with your actual token or use your token management system
+    
     return (
-        <section className="flex flex-col py-4 gap-y-8">
-            <div className='w-[900px]'>
-                <h3 className="text-lg font-semibold">Upcoming</h3>
-                <div className="grid grid-cols-3 gap-4  justify-items-center mt-4 mb-4">
-                    <ShowingEventCard data={data} />
-                    {isUser && <CreateNewEvent />}
-                </div>
-            </div>
-            <div className='w-[900px]'>
-                <h3 className="text-lg font-semibold">Passed</h3>
-                <div className="grid grid-cols-3 gap-4 justify-items-center mt-4 mb-4">
-                    <ShowingEventCard data={data} />
-                </div>
-            </div>
-        </section>
+      <section className="flex flex-col py-4 gap-y-8">
+        <div className='w-[900px]'>
+          <h3 className="text-lg font-semibold">Upcoming</h3>
+          <div className="grid grid-cols-3 gap-4  justify-items-center mt-4 mb-4">
+            <ShowingEventCard data={data} token={token} />
+            {isUser && <CreateNewEvent />}
+          </div>
+        </div>
+        <div className='w-[900px]'>
+          <h3 className="text-lg font-semibold">Passed</h3>
+          <div className="grid grid-cols-3 gap-4 justify-items-center mt-4 mb-4">
+            <ShowingEventCard data={data} token={token} isUser={isUser} />
+          </div>
+        </div>
+      </section>
     );
-};
-
-export default UserEvents;
+  };
+  
+  export default UserEvents;
