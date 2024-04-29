@@ -1,18 +1,29 @@
 import { useState } from 'react';
 import Navbar from '../Components/CustomNavbar';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useMutation } from 'react-query';
+import { Link } from 'react-router-dom';
 
-const createPostMutation = async ({ title, place, location, date, link,image, description, category }) => {
+const createPostMutation = async ({ title, place, location, date, link, image, price, description, category }) => {
   const token = localStorage.getItem('token');
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('place', place);
+  formData.append('location', location);
+  formData.append('date', date);
+  formData.append('link', link);
+  formData.append('price', price);
+  formData.append('description', description);
+  formData.append('category', category);
+  formData.append('image', image);
 
   const response = await fetch('http://localhost:8000/addPost', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ title, place, location, date, link,image, description, category }),
+    body: formData,
   });
 
   if (!response.ok) {
@@ -22,11 +33,8 @@ const createPostMutation = async ({ title, place, location, date, link,image, de
   return response.json();
 };
 
-
-
-
 const CreateEvent = () => {
-  const queryClient = useQueryClient();
+  const [success , isSuccess] = useState(false);
   const mutation = useMutation(createPostMutation, { 
     onSuccess: (data) => { 
       console.log('Post created successfully:', data); 
@@ -43,6 +51,7 @@ const CreateEvent = () => {
   const [location, setLocation] = useState('');
   const [place, setWilaya] = useState('');
   const [category, setSelectedCategory] = useState('');
+  const [price , setPrice] = useState('');
   const [image, setImages] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -54,6 +63,9 @@ const CreateEvent = () => {
       setCharCount(currentLength);
     }
   };
+  const handlePriceChange = (e) =>{
+    setPrice(e.target.value);
+  }
   const handleWilayaChange = (e) => {
     setWilaya(e.target.value);
   };
@@ -110,7 +122,7 @@ const CreateEvent = () => {
     setIsTimeInputVisible(false);
   };
 
-   console.log({ title, place, location, date, link,image, description, category });
+   console.log({ title, place, location, date, link, image : image[0], description, category });
   const handleImageRemove = (e, index) => {
     e.preventDefault();
     const newImages = image.filter((_, i) => i !== index);
@@ -127,13 +139,15 @@ const CreateEvent = () => {
         return;
       }
     }
-    mutation.mutate({ title, place, location, date, link, image , description, category });
+    mutation.mutate({ title, place, location, date, link, image : image[0] , price ,description, category });
+    isSuccess(true);
   };
   
   return (
-    <div className='bg-[#E1E1E1] h-screen w-full wrapper' >
+    <>
+    <div className='bg-[#E1E1E1] pb-8 w-full wrapper' >
       <Navbar />
-      <main className='px-10 py-4 mx-32 my-4 bg-white rounded-lg min-h-rest'>
+      <main className='px-10 py-4 mx-32 my-20 max-md:mx-0 max-lg:mx-6 bg-white rounded-lg min-h-rest'>
         <h1 className='flex justify-center text-3xl text-blue-950 font-semibold'>Create New Event</h1>
         <form className='flex flex-col mt-4 space-y-3' onSubmit={handleSubmit}>
           <input 
@@ -195,6 +209,14 @@ const CreateEvent = () => {
             placeholder="Wilaya"
             onChange={handleWilayaChange}
           />
+          <input
+            type="text"
+            required
+            value={price}
+            className="p-2 outline-none border border-[#bdbdbd] rounded-lg placeholder:text-gray-600 focus:outline-none focus:text-black focus:bg-white focus:border-gray-500"
+            placeholder="Price"
+            onChange={handlePriceChange}
+          />
           <div className='border w-full border-[#bdbdbd] overflow-hidden h-28 rounded-lg focus:outline-none focus:text-black focus:bg-white focus:border-gray-500'>
             <div className='flex flex-row justify-between mx-2'>
               <p className='text-gray-600'>Description</p>
@@ -211,13 +233,13 @@ const CreateEvent = () => {
           </div>
           <select value={category} onChange={handleCategoryChange} required className="block appearance-none w-full cursor-pointer bg-white border border-[#bdbdbd] text-gray-600 py-2 px-2 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:text-black focus:bg-white focus:border-gray-500">
             <option value="" disabled hidden>Select a Category</option>
-            <option value="category1">Business</option>
-            <option value="category2">Cultural</option>
-            <option value="category3">Cultural</option>
-            <option value="category4">Politics</option>
-            <option value="category5">Sports</option>
-            <option value="category6">Educational</option>
-            <option value="category7">Health & Care</option>
+            <option value="Business">Business</option>
+            <option value="Cultural">Cultural</option>
+            <option value="Cultural">Cultural</option>
+            <option value="Politics">Politics</option>
+            <option value="Sports">Sports</option>
+            <option value="Educational">Educational</option>
+            <option value="Health & Care">Health & Care</option>
           </select>
           <input 
           type="url"
@@ -249,10 +271,21 @@ const CreateEvent = () => {
             </div>
             {errorMsg && <p className='ml-4 text-red-600'>{errorMsg}</p>}
           </section>
-          <button type='submit' className='w-32 p-1 mt-4 text-white transition duration-300 ease-in-out bg-blue-500 rounded-lg hover:scale-[1.01]'>Save Changes</button>
+          <div className='flex justify-end'>
+            <button type='submit' className='w-32 p-1 mt-4 text-white transition duration-300 ease-in-out bg-blue-500 rounded-lg hover:scale-[1.01]'>Save Changes</button>
+          </div>
         </form>
       </main>
     </div>
+    {success &&  <div className='fixed inset-0 z-50 flex backdrop-blur-md justify-center items-center w-screen h-screen'>
+            <div className=" bg-gray-200 flex flex-col justify-center shadow-xl rounded-lg w-[500px] h-[200px] max-[520px]:w-[400px] max-[415px]:w-[300px]">
+             <div className="flex flex-col items-center gap-4 pt-8 justify-center mb-8">
+             <h1 className="text-2xl font-bold text-center"> Your event has been sent to the admin for approval or refusal. </h1>
+                <Link to={'/'} className='bg-blue-600 text-white font-semibold text-xl p-2 rounded-lg '>Go to Home</Link>
+             </div>
+            </div>
+        </div>}
+    </>
   );
 }
 

@@ -1,12 +1,12 @@
 import AddBtn from '../Assets/images/add.svg'; 
-import { useQuery , useMutation } from 'react-query';
+import { useQuery , useMutation , useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import image from '../Assets/images/hero.png'
+import { useState , useEffect } from 'react';
 
 const CreateNewEvent = () => {
   return (
-    <div className=" flex flex-col justify-center items-center">
+    <div className=" flex flex-col justify-center items-center w-[280px] h-[250px]">
       <Link to="/createEvent">
         <img
         src={AddBtn}
@@ -17,8 +17,8 @@ const CreateNewEvent = () => {
   );
 };
 const deleteEvent = async (eventId, token) => {
-    const response = await fetch(`http://localhost:8000/deletEvent/${eventId}`, {
-      method: 'DELETE',
+    const response = await fetch(`http://localhost:8000/cancelEvent/${eventId}`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -28,29 +28,105 @@ const deleteEvent = async (eventId, token) => {
       throw new Error('Failed to delete event');
     }
   };
-  
-  const ShowingEventCard = ({ data, token , isUser }) => {
+  const ShowingEventCard = ({ data, token , isUser , passed }) => {
+    const queryClient = useQueryClient();
     const navigate = useNavigate();
-  
+    const id = data._id ;
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/yourPosts/${id}`);
+        const eventData = await response.json();
+        console.log("Fetched data:", eventData);
+    
+        return { event: eventData };
+      } catch (error) {
+        console.error("Error fetching posts:", error.message);
+        throw error;
+      }
+    };
+    
+    const { data: events, isLoading, isError } = useQuery(['posts', id], fetchPosts);
+    
+    const [userEvent, setCardsData] = useState([]);
+
+    useEffect(() => {
+      if (events) {
+        setCardsData(events.event);
+      }
+    }, [events]);
+    console.log(userEvent);
     const handleCardClick = (id) => {
       navigate(`/EventPage/${id}`);
     };
   
-    // Mutation function for deleting an event
     const deleteEventMutation = useMutation((eventId) => deleteEvent(eventId, token));
   
     const handleDelete = (id) => {
       deleteEventMutation.mutate(id);
     };
-    const userEvent = data?.YourEvents;
+    const handleEdit = (id)=>{
+      navigate(`/EditEvent/${id}`);
+    }
+    console.log(data)
+    const handleLike = async (id) => {
+      try {
+        const response = await fetch(`http://localhost:8000/likeEvent/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to like the event');
+        }
+        // If the request is successful, invalidate the 'posts' query to trigger a refetch
+        queryClient.invalidateQueries('posts');
+      } catch (error) {
+        console.error('Error liking event:', error);
+      }
+    };
+    
+  
+    const handleDislike = async (id) => {
+      try {
+        const response = await fetch(`http://localhost:8000/dislike/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to like the event');
+        }
+        // If the request is successful, invalidate the 'posts' query to trigger a refetch
+        queryClient.invalidateQueries('posts');
+      } catch (error) {
+        console.error('Error liking event:', error);
+      }
+    };
+    var currentDate =new Date();
+    var EventF = userEvent.filter((event) => {
+      const unknownDate = new Date(event.date);
+      if (!passed) {
+        return unknownDate >= currentDate;
+    } else {
+        return unknownDate < currentDate;
+    }
+      });
+      console.log(EventF , "event")
+    const Liked = (id) =>{
+      return data?.likedEvents.find(event => event._id === id);
+    }
     return (
         <>
-            {userEvent?.map((card) => (
-                <div className='flex flex-col items-center ' key={card._id}>
-                    <div className="cards1" onClick={() => handleCardClick(card._id)} >
-                    <img className='w-[300px] h-[250px}' src={image} alt="image" />
+          {EventF.map((card) => (
+              <div className='flex flex-col w-[280px]' key={card._id}>
+                    <div className="cards1"  >
+                    <img className='w-[280px] h-[220px]' src={`http://localhost:8000/assets/${card.image}`} alt="image" />
                 <div className="absolute top-0 left-0 bg-white pt-0.5 pb-0.5 pe-2 ps-2"><p className="text-base font-medium">{card.price}</p></div>
-                <div className="flex justify-between items-center pt-2 pb-2 ps-1 pe-2">
+                <div onClick={() => handleCardClick(card._id)} className="flex justify-between items-center pt-2 pb-2 ps-1 pe-2 cursor-pointer">
                 <div className="basis-1/6 font-medium text-md text-center">
                   <div>{new Date(card.date).getDate()}</div>
                   <div>{new Date(card.date).toLocaleString('default', { month: 'short' })}</div>
@@ -63,35 +139,41 @@ const deleteEvent = async (eventId, token) => {
                     <div className="basis-2/6"> <span className="font-medium ps-4">{data?.followers?.length} </span>Followers</div>
                 </div>
                 <div className="absolute top-2 right-2 bg-white hover:scale-[1.1] transition duration-500 p-1 rounded-3xl z-10">
-                    <svg  xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 14" fill="none">
+                { !Liked(card._id) && <svg  xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 14" fill="none" onClick={()=>{handleLike(card._id);}}>
                         <path d="M11.6458 0.699707C10.1567 0.699707 8.84484 1.44425 8.1003 2.61425C7.35575 1.44425 6.04393 0.699707 4.55484 0.699707C2.21484 0.699707 0.300293 2.61425 0.300293 4.95425C0.300293 9.17334 8.1003 13.4633 8.1003 13.4633C8.1003 13.4633 15.9003 9.2088 15.9003 4.95425C15.9003 2.61425 13.9858 0.699707 11.6458 0.699707Z" fill="#C2C2C2"/>
-                    </svg>
+                  </svg>}
+                  { Liked(card._id) && <svg  xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 14" fill="none" onClick={()=>{handleDislike(card._id);}}>
+                        <path d="M11.6458 0.699707C10.1567 0.699707 8.84484 1.44425 8.1003 2.61425C7.35575 1.44425 6.04393 0.699707 4.55484 0.699707C2.21484 0.699707 0.300293 2.61425 0.300293 4.95425C0.300293 9.17334 8.1003 13.4633 8.1003 13.4633C8.1003 13.4633 15.9003 9.2088 15.9003 4.95425C15.9003 2.61425 13.9858 0.699707 11.6458 0.699707Z" fill="#ff0000"/>
+                  </svg> }
                 </div>
                     </div>
-                    {isUser && <button className='bg-red-600 rounded-xl font-semibold text-white pt-2 pb-2 pe-4 ps-4 mt-4 hover:scale-[1.01]' onClick={() => handleDelete(card._id)}>Delete This Event</button>}
-                </div>
-            ))}
+                    {isUser && 
+                    <div className='space-x-6'>
+                      <button className='bg-red-600 rounded-xl font-semibold text-lg text-white pt-2 pb-2 w-32 pe-4 ps-4 mt-4 hover:scale-[1.01] hover:shadow-xl' onClick={() => handleDelete(card._id)}>Cancel </button>
+                      <button className='bg-blue-600 rounded-xl font-semibold text-lg text-white pt-2 pb-2 w-32 pe-4 ps-4 mt-4 hover:scale-[1.01] hover:shadow-xl' onClick={() => handleEdit(card._id)}>Edit</button>
+                      </div> }
+              </div>
+            ))}  
         </>
     );
 };
 
 const UserEvents = ({ isUser, data }) => {
-    // Token management logic
-    const token = localStorage.getItem('token') // Replace 'your_token' with your actual token or use your token management system
+    const token = localStorage.getItem('token');
     
     return (
-      <section className="flex flex-col py-4 gap-y-8">
-        <div className='w-[900px]'>
+      <section className="flex flex-col py-4">
+        <div className='w-full'>
           <h3 className="text-lg font-semibold">Upcoming</h3>
-          <div className="grid grid-cols-3 gap-4  justify-items-center mt-4 mb-4">
-            <ShowingEventCard data={data} token={token} />
+          <div className="grid mb-4 gap-x-32 grid-cols-3 max-[1469px]:grid-cols-2 max-[1469px]:gap-x-16 max-[1105px]:grid-cols-3 max-[996px]:grid-cols-2 max-md:gap-0 max-[588px]:grid-cols-1 max-md:ml-4 max-[588px]:ml-10 max-[354px]:ml-0">
+            <ShowingEventCard data={data} token={token} isUser={isUser} passed={false} />
             {isUser && <CreateNewEvent />}
           </div>
         </div>
-        <div className='w-[900px]'>
+        <div className='w-full'>
           <h3 className="text-lg font-semibold">Passed</h3>
-          <div className="grid grid-cols-3 gap-4 justify-items-center mt-4 mb-4">
-            <ShowingEventCard data={data} token={token} isUser={isUser} />
+          <div className="grid mb-4 gap-x-32 grid-cols-3 max-[1469px]:grid-cols-2 max-[1469px]:gap-x-16 max-[1105px]:grid-cols-3 max-[996px]:grid-cols-2 max-md:gap-0 max-[588px]:grid-cols-1 max-md:ml-4 max-[588px]:ml-10 max-[354px]:ml-0">
+            <ShowingEventCard data={data} token={token} passed={true} />
           </div>
         </div>
       </section>

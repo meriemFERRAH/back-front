@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery ,useMutation } from 'react-query';
 import Navbar from '../Components/CustomNavbar';
 import LikedEvents from '../Components/LikedEvents';
 import Events from '../Components/UserEvents';
 import Userlists from '../Components/FollowersAndFollowing';
+import Loading from '../Components/Loading';
+import Notfound from './notfound';
 
 export default function UserProfile() {
     const { id } = useParams();
@@ -51,7 +53,7 @@ export default function UserProfile() {
   }));
 
   const isUserFollowed = (userId) => {
-    return owner && owner.follows.includes(userId);
+    return userInfo?.follows.find(user => user._id === userId);
   };
   console.log(isUserFollowed(id)) 
   const onToggleFollow = (id, isFollowed) => {
@@ -105,18 +107,18 @@ export default function UserProfile() {
         setShowFollowers(false);
     };
 
-    if (userLoading) return <div>Loading...</div>;
-    if (userError) return <div>Error fetching user data</div>;
+    if (userLoading) return <div className="relative h-screen w-screen"><Loading/></div>
+    if (userError) return <Notfound/>
 
     return (
-        <div className='wrapper overflow-y-auto bg-[#E1E1E1]'>
+        <div className='wrapper overflow-x-hidden bg-[#E1E1E1]'>
             <div className='h-screen'>
                 <Navbar />
                 <span className='flex justify-center h-rest gap-x-6'>
                     <div className='mt-8'>
                         <div className='h-80 w-[440px] rounded-lg p-4 px-6 border border-[#bdbdbd] bg-white'>
                             <div className='flex flex-col items-center justify-center mb-6'>
-                                <img src={userInfo?.image} alt="" className='h-[130px] w-[140px]' />
+                                <img src={`http://localhost:8000/assets/${userInfo.image}`} alt="" className='h-[130px] w-[140px] rounded-full' />
                                 <h2 className='mb-5 text-[#414141]'>{userInfo?.username}</h2>
                             </div>
                             <hr className='border border-[#00000080]' />
@@ -135,10 +137,10 @@ export default function UserProfile() {
                           {isUserFollowed(id) ? 'Unfollow' : 'Follow back'}
                         </p></div>
                         </div>
-                        <div className='overflow-auto wrapper h-[170px] w-[440px] bg-white border border-[#bdbdbd] rounded-lg px-4 py-2 mt-4'>
+                       { userInfo?.description &&  (<div className='overflow-auto wrapper h-[170px] w-[440px] bg-white border border-[#bdbdbd] rounded-lg px-4 py-2 mt-4'>
                             <h2 className='mb-1 font-semibold'>Description</h2>
                             <p className='w-full overflow-y-auto break-words outline-none' placeholder='Your Description...'>{userInfo?.description}</p>
-                        </div>
+                        </div>)}
                        
                     </div>
                     <section className='flex-col w-1/2 mt-8'>
@@ -148,7 +150,7 @@ export default function UserProfile() {
                             <a href="" className={` ${showFollowers ? 'pt-[17px] pb-3 border-b-4 border-[#0047ff]' : ''}`} onClick={handleFollowersClick}>Followers</a>
                             <a href="" className={` ${showFollowing ? 'pt-[17px] pb-3 border-b-4 border-[#0047ff]' : ''}`} onClick={handleFollowingClick}>Following</a>
                         </div>
-                        {showLiked && <LikedEvents data={userInfo?.likedEvents} />}
+                        {showLiked && <LikedEvents data={userInfo} />}
                         {showEvents && <Events isUser={false} data = {userInfo} />}
                         {showFollowers && <Userlists  userInfo={userInfo} userList={userInfo?.followers} />}
                         {showFollowing && <Userlists userInfo={owner}  userList={userInfo?.follows} />}

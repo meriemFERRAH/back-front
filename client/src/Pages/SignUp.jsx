@@ -34,6 +34,8 @@ const useSignUpMutation = () => {
 export default function SignUp() {
     const [animationClass, setAnimationClass] = useState('translate-y-[1000px]');
     const [placement, setplacement] = useState(''); 
+    const [passwordchecked, isPasswordchecked] = useState(true); 
+    const [match, ismatched] = useState(false);
     const signUpMutation = useSignUpMutation();
 
     useEffect(() => {
@@ -51,7 +53,6 @@ export default function SignUp() {
         email: '',
         password: '',
       });
-      //backend link 
       const[confirm, setConfirm] =useState(''); 
  
       const handleChange = (e) => { 
@@ -67,28 +68,49 @@ export default function SignUp() {
         const { firstName, lastName, email, password } = formData;
         const username = `${firstName} ${lastName}`;
         const userCredentials = { username, email, password };
-        try {
-          await signUpMutation.mutateAsync(userCredentials);
-    
-          // Redirect or perform any other actions upon successful sign-up
-          navigate('/Login');
-        } catch (error) {
-          // Handle sign-up failure
-          console.error('Sign-up failed:', error);
+        const isPowerful = isPowerfulPassword(password);
+        if (confirm != password) ismatched(true);
+        isPasswordchecked(isPowerful);
+        const matched = match ;
+        
+        if (!matched && isPowerful) { // Check if the password is powerful before attempting sign-up
+          try {
+            await signUpMutation.mutateAsync(userCredentials);
+            navigate('/Login');
+          } catch (error) {
+            // Handle sign-up failure
+            console.error('Sign-up failed:', error);
+          }
         }
       };
+      
+      function isPowerfulPassword(password) {
+        // Define criteria for a powerful password
+        const minLength = 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        const hasSpecialChars = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
     
+        // Check if the password meets all criteria
+        return (
+            (password.length >= minLength &&
+            hasUpperCase &&
+            hasLowerCase &&
+            hasNumbers &&
+            hasSpecialChars)
+        );
+    }
   return (
-    <div className='relative h-screen overflow-hidden flex justify-center items-center' >
-        <img  className='w-screen h-fit z-0' src={image} alt="image" />
+    <div className="relative h-screen overflow-hidden flex justify-center items-center bg-[url('./Assets/imageSignInUp.png')]" >
         
-        <div className={`transition duration-700 absolute top-16 h-fit w-fit bg-white rounded-lg ${animationClass} ${placement}`}>
+        <div className={`transition duration-700 absolute top-32 h-fit w-fit max-[475px]:w-full bg-white min-[475px]:rounded-lg ${animationClass} ${placement}`}>
          <h1 className='text-3xl font-bold text-center m-16'>Sign Up</h1>
-          <div className='flex flex-col gap-4 items-center justify-center m-16 '>
+          <div className='flex flex-col gap-2 items-center justify-center m-16 '>
             <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
                 <div className=' flex gap-8 '>
                 <input
-                className='w-36'
+                className='w-36 outline-none cursor-text p-2'
                 type="text"
                 placeholder="First Name"
                 name="firstName"
@@ -97,7 +119,7 @@ export default function SignUp() {
                 required
             />
             <input
-            className='w-36'
+            className='w-36 outline-none cursor-textp-2'
                 type="text"
                 placeholder="Last Name"
                 name="lastName"
@@ -108,6 +130,7 @@ export default function SignUp() {
                 </div>
            
             <input
+            className='outline-none cursor-text p-2'
                 type="email"
                 placeholder="Email"
                 name="email"
@@ -115,7 +138,12 @@ export default function SignUp() {
                 onChange={handleChange}
                 required
             />
+            {match && <div className='text-sm font-semibold text-red-500'>Password does not match </div>}
+            {!passwordchecked && <div className='text-sm font-semibold text-red-500'>
+              Please ensure that the password contains a mix of <br />uppercase 
+              and lowercase letters,numbers and special letters.</div>}
             <input
+            className='outline-none cursor-text p-2'
                 type="password"
                 placeholder="Password"
                 name="password"
@@ -124,6 +152,7 @@ export default function SignUp() {
                 required
             />
             <input
+            className='p-2 outline-none w-36 cursor-text'
                 type="password"
                 placeholder="Confirm Password"
                 name="Confirm-password"

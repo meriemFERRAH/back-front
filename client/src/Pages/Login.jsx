@@ -5,7 +5,8 @@ import { useQueryClient  } from 'react-query';
 
 export default function Login() {
   const [animationClass, setAnimationClass] = useState('translate-y-[1000px]');
-  const Navigate = useNavigate();
+  const [verify , setVerify] = useState(false);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   useEffect(() => {
       // Update the animation class after a delay
@@ -15,7 +16,6 @@ export default function Login() {
   
       return () => clearTimeout(timeout);
     }, []);
-    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -43,32 +43,36 @@ export default function Login() {
           if (response.ok) {
             const data = await response.json();
             if (data){
-            const { userId, username } = data.user;
+            //const { userId, username } = data.user;
+            const userId = data.user.userId;
+            const username = data.user.username;
             localStorage.setItem('userId', userId);
+            localStorage.setItem('username' , username);
             localStorage.setItem('token', data.token);
-
       // Use the user data as needed
-      console.log(`User ID: ${userId}, Username: ${username}`);
+           console.log(`User ID: ${userId}, Username: ${username}`);
             queryClient.invalidateQueries('User');
             queryClient.invalidateQueries(['otherQueryKey']);
-            Navigate('/')} 
+            if(localStorage.getItem('username') == "admin") navigate('/Admin') ; else navigate('/') ;
+          } 
           } else {
             console.error('Login failed');
             // You might want to display an error message to the user
           }
         } catch (error) {
-          console.error('Error during login:', error);
+          setVerify(true);
         }
       };
     
   return (
-    <div className='relative overflow-hidden w-screen h-screen flex justify-center items-center' >
-        <img  className='w-screen h-fit' src={image} alt="image" />
-        <div className={`transition duration-700 absolute top-32 h-fit w-fit bg-white rounded-lg ${animationClass}`}>
-         <h1 className='text-3xl font-bold text-center m-16'>Login</h1>
-          <div className='flex flex-col gap-4 items-center justify-center m-16 '>
+    <div className="relative overflow-hidden w-screen h-screen flex justify-center items-center bg-[url('./Assets/imageLogin.png')]" >
+        <div className={`transition duration-700 absolute top-32 h-fit w-fit max-[400px]:w-full bg-white min-[400px]:rounded-lg ${animationClass}`}>
+          <h1 className='text-3xl font-bold text-center m-16'>Login</h1>
+          <div className='flex flex-col gap-2 items-center justify-center m-16 '>
+          {verify && <div className='text-sm font-semibold text-red-500'>Email or Password is incorrect</div>}
             <form className='flex flex-col gap-8' onSubmit={handleSubmit}>
             <input
+                className='p-2 outline-none'
                 type="email"
                 placeholder="Email"
                 name="email"
@@ -77,6 +81,7 @@ export default function Login() {
                 required
             />
             <input
+                className='p-2 outline-none'
                 type="password"
                 placeholder="Password"
                 name="password"

@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation } from 'react-query';
 
 const Userlists = ({userInfo ,  userList }) => {
-  console.log("useList : " + userList)
-  const queryClient = useQueryClient();
   
   // Function to retrieve token from localStorage
   const getToken = () => {
@@ -29,20 +27,21 @@ const Userlists = ({userInfo ,  userList }) => {
       return (id != localStorage.getItem('userId'))
   }
   const isUserFollowed = (userId) => {
-    return userList.find(user => user._id === userId);
+    return userInfo.follows.find(user => user._id === userId);
   };
 
   const onToggleFollow = async (id, isFollowed) => {
     try {
       if (isFollowed) {
-        await unfollowUserMutation.mutateAsync(id);
+        await unfollowUserMutation.mutate(id);
       } else {
-        await followUserMutation.mutateAsync(id);
+        await followUserMutation.mutate(id);
       }
     } catch (error) {
       console.error('Error:', error);
       // Handle error
     }
+    window.location.reload();
   };
 
   return (
@@ -50,7 +49,7 @@ const Userlists = ({userInfo ,  userList }) => {
       {userList.map((user) => (
         <div key={user._id} className='flex items-center justify-between bg-white mb-1 p-4 w-full'>
           <div className='flex items-center'>
-            <img src={user.image} alt='' className='h-[60px] w-[60px]' />
+            <img src={`http://localhost:8000/assets/${user.image}`} alt='' className='h-[60px] w-[60px] rounded-full ' />
             <Link to={`/UserProfile/${user._id}`} className='ml-4'>
               {user?.username}
             </Link>

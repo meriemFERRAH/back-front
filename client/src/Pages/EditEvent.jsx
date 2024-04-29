@@ -1,44 +1,43 @@
 import { useState } from 'react';
 import Navbar from '../Components/CustomNavbar';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from 'react-query';
 
-const fetchEvent = async (eventId) => {
-  const response = await fetch(`http://localhost:8000/posts/${eventId}`);
-  const data = await response.json();
-  return data;
-};
+const createPostMutation = async ({ id , title, place, location, date, link, image, price, description, category }) => {
 
-const updateEvent = async ({ id, updatedFields }) => {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('place', place);
+  formData.append('location', location);
+  formData.append('date', date);
+  formData.append('link', link);
+  formData.append('price', price);
+  formData.append('description', description);
+  formData.append('category', category);
+  formData.append('image', image);
+
   const response = await fetch(`http://localhost:8000/UpdateEvent/${id}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(updatedFields),
+    body: formData,
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update event');
+    throw new Error('Failed to create post');
   }
 
-  const data = await response.json();
-  return data;
+  return response.json();
 };
-const EditEvent = () => {
-  const { id } = useParams();
-  const queryClient = useQueryClient();
-  const { data: event, isLoading, isError } = useQuery(['event', id], () => fetchEvent(id));
 
-  const { mutate } = useMutation(
-    (updatedFields) => updateEvent({ id, updatedFields }),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['event', id]);
-        queryClient.invalidateQueries('posts');
-      },
-    }
-  );
+const EditEvent = () => {
+  const queryClient = useQueryClient();
+  const mutation = useMutation(createPostMutation, { 
+    onSuccess: (data) => { 
+      console.log('Post created successfully:', data); 
+    }, 
+  });
+  const {id} = useParams();
   const Navigate = useNavigate();
   const [charCount, setCharCount] = useState(0);
   const[description , setInputText] = useState('');
@@ -50,6 +49,7 @@ const EditEvent = () => {
   const [location, setLocation] = useState('');
   const [place, setWilaya] = useState('');
   const [category, setSelectedCategory] = useState('');
+  const [price , setPrice] = useState('');
   const [image, setImages] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -61,6 +61,9 @@ const EditEvent = () => {
       setCharCount(currentLength);
     }
   };
+  const handlePriceChange = (e) =>{
+    setPrice(e.target.value);
+  }
   const handleWilayaChange = (e) => {
     setWilaya(e.target.value);
   };
@@ -117,7 +120,7 @@ const EditEvent = () => {
     setIsTimeInputVisible(false);
   };
 
-   console.log({title , place , location , date , link , image , description , category });
+   console.log({ title, place, location, date, link, image : image[0], description, category });
   const handleImageRemove = (e, index) => {
     e.preventDefault();
     const newImages = image.filter((_, i) => i !== index);
@@ -134,19 +137,14 @@ const EditEvent = () => {
         return;
       }
     }
-    const formData = { title, place, location, date, link, description, category };
-    try {
-      await mutate(formData);
-      Navigate(`/eventPage/${id}`)
-    } catch (error) {
-      console.error('Error updating the event:');
-    }
+    mutation.mutate({ id,  title, place, location, date, link, image : image[0] , price ,description, category });
+    Navigate('/');
   };
   
   return (
-    <div className='bg-[#E1E1E1] h-screen w-full wrapper' >
+    <div className='bg-[#E1E1E1] pb-8 w-full wrapper' >
       <Navbar />
-      <main className='px-10 py-4 mx-32 my-4 bg-white rounded-lg min-h-rest'>
+      <main className='px-10 py-4 mx-32 my-20 max-md:mx-0 max-lg:mx-6 bg-white rounded-lg min-h-rest'>
         <h1 className='flex justify-center text-3xl text-blue-950 font-semibold'>Edit Your Event</h1>
         <form className='flex flex-col mt-4 space-y-3' onSubmit={handleSubmit}>
           <input 
@@ -208,6 +206,14 @@ const EditEvent = () => {
             placeholder="Wilaya"
             onChange={handleWilayaChange}
           />
+          <input
+            type="text"
+            required
+            value={price}
+            className="p-2 outline-none border border-[#bdbdbd] rounded-lg placeholder:text-gray-600 focus:outline-none focus:text-black focus:bg-white focus:border-gray-500"
+            placeholder="Price"
+            onChange={handlePriceChange}
+          />
           <div className='border w-full border-[#bdbdbd] overflow-hidden h-28 rounded-lg focus:outline-none focus:text-black focus:bg-white focus:border-gray-500'>
             <div className='flex flex-row justify-between mx-2'>
               <p className='text-gray-600'>Description</p>
@@ -224,13 +230,13 @@ const EditEvent = () => {
           </div>
           <select value={category} onChange={handleCategoryChange} required className="block appearance-none w-full cursor-pointer bg-white border border-[#bdbdbd] text-gray-600 py-2 px-2 pr-8 rounded-lg shadow-sm leading-tight focus:outline-none focus:text-black focus:bg-white focus:border-gray-500">
             <option value="" disabled hidden>Select a Category</option>
-            <option value="category1">Business</option>
-            <option value="category2">Cultural</option>
-            <option value="category3">Cultural</option>
-            <option value="category4">Politics</option>
-            <option value="category5">Sports</option>
-            <option value="category6">Educational</option>
-            <option value="category7">Health & Care</option>
+            <option value="Business">Business</option>
+            <option value="Cultural">Cultural</option>
+            <option value="Cultural">Cultural</option>
+            <option value="Politics">Politics</option>
+            <option value="Sports">Sports</option>
+            <option value="Educational">Educational</option>
+            <option value="Health & Care">Health & Care</option>
           </select>
           <input 
           type="url"
@@ -262,7 +268,9 @@ const EditEvent = () => {
             </div>
             {errorMsg && <p className='ml-4 text-red-600'>{errorMsg}</p>}
           </section>
-          <button type='submit' className='w-32 p-1 mt-4 text-white transition duration-300 ease-in-out bg-blue-500 rounded-lg hover:scale-[1.01]'>Save Changes</button>
+          <div className='flex justify-end'>
+            <button type='submit' className='w-32 p-1 mt-4 text-white transition duration-300 ease-in-out bg-blue-500 rounded-lg hover:scale-[1.01]'>Save Changes</button>
+          </div>
         </form>
       </main>
     </div>

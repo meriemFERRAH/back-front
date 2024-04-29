@@ -1,5 +1,5 @@
 import Home from "./Pages/Home";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import SignUp from "./Pages/SignUp";
 import { useState, useEffect } from 'react';
 import Login from "./Pages/Login";
@@ -15,40 +15,54 @@ import EditEvent from './Pages/EditEvent';
 import EditProfile from "./Pages/EditProfile";
 import UserProfile from "./Pages/UserProfile";
 import { QueryClient, QueryClientProvider } from 'react-query';
+import Preference from "./Components/preference";
 
 const queryClient = new QueryClient();
 
 const FirstPage = () => {
   return (
     <div>
-      <Home  />
-      <Categories  />
-      <Footer  />
+      <Home />
+      <Categories />
+      <Footer />
     </div>
   );
 };
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const location = useLocation();
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const alreadyReloaded = localStorage.getItem('alreadyReloaded');
+      if (!alreadyReloaded) {
+        localStorage.setItem('alreadyReloaded', true);
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   return (
     <>
       <QueryClientProvider client={queryClient}>
         <ProfileImageProvider>
-          <Routes>
-            {isAdmin ? (
-              <Route path="/Admin" element={<Admin />} />
-            ) : (
-              <>
+          <Routes >
+            <>
+                <Route path="/Admin" element={<Admin />} />
                 <Route path="/" element={<FirstPage />} />
-                <Route path="/Explore" element={<SignUp />} />
                 <Route path="/Contact" element={<SignUp />} />
                 <Route path="/About" element={<SignUp />} />
                 <Route path="/FAQ" element={<SignUp />} />
                 <Route path="/TermOfUse" element={<SignUp />} />
                 <Route path="/SignUp" element={<SignUp />} />
                 <Route path="/Login" element={<Login />} />
+                <Route path="/Preference" element={<Preference />} />
                 <Route path="/Profile/:id" element={<Profile />} />
                 <Route path="/EditEvent/:id" element={<EditEvent />} />
                 <Route path="/CreateEvent" element={<CreateEvent />} />
@@ -57,7 +71,6 @@ function App() {
                 <Route path="/EditProfile/:id" element={<EditProfile />} />
                 <Route path="/*" element={<Notfound />} />
               </>
-            )}
           </Routes>
         </ProfileImageProvider>
       </QueryClientProvider>
